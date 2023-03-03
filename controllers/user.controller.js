@@ -43,20 +43,16 @@ export const createNewUser = async (req, res) => {
 			(err, info) => {
 				if (err) {
 					console.error("Email failed to send:", err);
-					return res
-						.status(StatusCodes.INTERNAL_SERVER_ERROR)
-						.json({
-							status: "fail",
-							message: "Email failed to send",
-						});
-				}
-				console.log(code)
-				return res
-					.status(StatusCodes.CREATED)
-					.json({
-						status: "success",
-						message: "Email has been sent",
+					return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+						status: "fail",
+						message: "Email failed to send",
 					});
+				}
+				console.log(code);
+				return res.status(StatusCodes.CREATED).json({
+					status: "success",
+					message: "Email has been sent",
+				});
 			}
 		);
 	} catch (error) {
