@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendMail = (email, subject, message, cb = () => {}) => {
   const mailOptions = {
-    from: "ECC",
+    from: "WECARE",
     to: email,
     subject,
     html: message,

@@ -1,5 +1,5 @@
 const environmentVariablesList = [
-	"DB_CONN_STRING",
+	"MONGO_URI",
 	"JWT_PRIVATE_KEY",
 	"FRONTEND_BASE_URL",
 ];
