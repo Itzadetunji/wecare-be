@@ -26,6 +26,10 @@ export const userSchema = mongoose.Schema(
 			maxLength: 10,
 			unique: true,
 		},
+		emailVerified: {
+			type: Boolean,
+			default: false,
+		},
 	},
 	{ timestamps: true }
 );
@@ -46,7 +50,7 @@ export const validateUser = (payload) => {
 			.email({ minDomainSegments: 2, tlds: { allow: false } })
 			.required()
 			.min(3)
-		.max(50),
+			.max(50),
 		password: Joi.string().min(8).max(50).required(),
 	});
 

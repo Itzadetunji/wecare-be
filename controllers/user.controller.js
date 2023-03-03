@@ -1,11 +1,12 @@
 import passport from "passport";
 import User, { validateUser } from "../models/user.model.js";
-import EmailCode from "../models/emailCode.model.js";
+import EmailCode, { validateEmailCode } from "../models/emailCode.model.js";
 import passportLocal from "passport-local";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { sendMail } from "../utils/nodemailertransport.js";
+import { isValidObjectId } from "mongoose";
 
 export const createNewUser = async (req, res) => {
 	try {
@@ -61,4 +62,48 @@ export const createNewUser = async (req, res) => {
 			.status(StatusCodes.INTERNAL_SERVER_ERROR)
 			.json({ status: "fail", message: "Failed to create the new user" });
 	}
+};
+
+export const verifyUserEmail = async (req, res) => {
+	const { code, id } = req.params;
+	if (!isValidObjectId(id))
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ status: "fail", message: "This Id is not valid!" });
+
+	const user = await User.findById(id);
+	if (!user)
+		return res
+			.status(StatusCodes.NOT_FOUND)
+			.json({ status: "fail", message: "This user does not exist!" });
+
+	if (user.emailVerified)
+		return res.status(StatusCodes.BAD_REQUEST).json({
+			status: "fail",
+			message: "This email has already been verified",
+		});
+
+	let emailCode = await EmailCode.findOne({ userId: id, code });
+
+	if (!emailCode || emailCode.code !== code)
+		return res.status(StatusCodes.BAD_REQUEST).json({
+			status: "fail",
+			message: "Please request for another code!",
+		});
+
+	const { error } = validateEmailCode({ code });
+
+	if (error)
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ message: error.details[0].message });
+
+	user.emailVerified = true;
+	await user.save();
+
+	await EmailCode.deleteMany({ userId: id });
+
+	return res
+		.status(StatusCodes.OK)
+		.json({ status: "success", message: "Email verified successfully!" });
 };
