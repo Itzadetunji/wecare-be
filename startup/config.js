@@ -2,6 +2,9 @@ const environmentVariablesList = [
 	"MONGO_URI",
 	"JWT_PRIVATE_KEY",
 	"FRONTEND_BASE_URL",
+  "HOST",
+  "EMAIL",
+  "EMAIL_APP_PASSWORD"
 ];
 
 export default () => {
