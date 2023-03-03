@@ -1,9 +1,9 @@
 import express from "express";
 import passport from "passport";
-import { createNewUser } from "../controllers/user.js";
+import { createNewUser } from "../controllers/user.controller.js";
 
 const userRouter = express.Router();
 
-userRouter.get("/", createNewUser);
+userRouter.post("/", createNewUser);
 
 export default userRouter;

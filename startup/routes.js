@@ -1,5 +1,5 @@
 import error from "../middleware/Error.js";
-import userRouter from "../routes/user.js";
+import userRouter from "../routes/user.route.js";
 
 export default (app) => {
   app.use("/api/users", userRouter);

@@ -8,6 +8,10 @@ export const userSchema = mongoose.Schema(
 			type: String,
 			minLength: 3,
 			maxLength: 50,
+			match: [
+				/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/,
+				"Please endter a valid email address",
+			],
 			required: true,
 			unique: true,
 		},
@@ -15,6 +19,12 @@ export const userSchema = mongoose.Schema(
 			type: String,
 			minLength: 8,
 			required: true,
+		},
+		userId: {
+			type: String,
+			minLength: 10,
+			maxLength: 10,
+			unique: true,
 		},
 	},
 	{ timestamps: true }
@@ -36,7 +46,7 @@ export const validateUser = (payload) => {
 			.email({ minDomainSegments: 2, tlds: { allow: false } })
 			.required()
 			.min(3)
-			.max(50),
+		.max(50),
 		password: Joi.string().min(8).max(50).required(),
 	});
 
