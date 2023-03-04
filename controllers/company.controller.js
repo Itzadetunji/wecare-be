@@ -4,6 +4,7 @@ import Company, {
 	validateCreateCompany,
 } from "../models/company.model.js";
 import EmailCode, { validateEmailCode } from "../models/emailCode.model.js";
+import Token from "../models/token.model.js";
 import passportLocal from "passport-local";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -39,7 +40,13 @@ export const authenticateCompany = async (req, res) => {
 		});
 
 	const token = "Bearer " + company.generateAuthToken();
-	if (!isUserVerifiedFunc(req, res, company)) {
+	const storeToken = new Token({
+		token: token.split(" ")[1],
+		companyId: company._id,
+	});
+	await storeToken.save();
+
+	if (!isCompanyVerifiedFunc(req, res, company)) {
 		res.cookie("api-auth", token, {
 			secure: false,
 			httpOnly: true,
@@ -47,6 +54,19 @@ export const authenticateCompany = async (req, res) => {
 		});
 		return res.status(StatusCodes.OK).json({ status: "success", token });
 	}
+};
+
+export const logoutCompany = async (req, res) => {
+	const { companyId } = req.body;
+	let token = req.cookies["api-auth"];
+	if (token) {
+		// await Token.deleteMany({ companyId });
+		token = token.split(" ")[1];
+		res.cookie("api-auth", token, { maxAge: 0 });
+	}
+	return res
+		.status(StatusCodes.OK)
+		.json({ status: "success", message: "Logout successful" });
 };
 
 export const createNewCompany = async (req, res) => {
@@ -71,23 +91,23 @@ export const createNewCompany = async (req, res) => {
 		const salt = await bcrypt.genSalt(10);
 		const password = await bcrypt.hash(req.body.password, salt);
 		const { companyAddress, companyName, email, mobileNumber } = req.body;
-		const user = new Company({
+		const company = new Company({
 			companyAddress,
 			companyName,
 			email,
 			mobileNumber,
 			password,
 		});
-		await user.save();
+		await company.save();
 
 		const code = Math.floor(1000 + Math.random() * 9000).toString();
-		await EmailCode.deleteMany({ companyId: user._id });
-		const emailCode = new EmailCode({ code, companyId: user._id });
+		await EmailCode.deleteMany({ companyId: company._id });
+		const emailCode = new EmailCode({ code, companyId: company._id });
 		await emailCode.save();
-		const link = `${process.env.HOST}/api/user/verify/${user._id}/${code}`;
+		const link = `${process.env.HOST}/api/company/verify/${company._id}/${code}`;
 
 		sendMail(
-			user.email,
+			company.email,
 			"OTP To Verify to your Wecare Company Account",
 			`<p>Use this code to verify your email address:</p> <h1>${code}</h1><p>Or Login using this link: <br>${link}</p>`,
 			(err, info) => {
@@ -159,7 +179,7 @@ export const verifyCompanyEmail = async (req, res) => {
 		.json({ status: "success", message: "Email verified successfully!" });
 };
 
-const isUserVerifiedFunc = (req, res, company) => {
+const isCompanyVerifiedFunc = (req, res, company) => {
 	if (!company.accountVerified || !company.emailVerified) {
 		!company.accountVerified &&
 			(message =
