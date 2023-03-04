@@ -1,8 +1,8 @@
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import helmet from "helmet";
 import logger from "morgan";
+import helmet from "helmet";
 import xss from "xss-clean";
 
 const trimmer = (req, res, next) => {
