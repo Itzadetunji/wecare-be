@@ -39,7 +39,7 @@ export const createNewUser = async (req, res) => {
 
 		sendMail(
 			user.email,
-			"OTP To Login to your Wecare User Account",
+			"OTP To Verify to your Wecare User Account",
 			`<p>Use this code to verify your email address:</p> <h1>${code}</h1><p>Or Login using this link: <br>${link}</p>`,
 			(err, info) => {
 				if (err) {
