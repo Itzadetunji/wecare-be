@@ -1,8 +1,8 @@
 import error from "../middleware/Error.js";
-import userRouter from "../routes/user.route.js";
+import companyRouter from "../routes/company.route.js";
 
 export default (app) => {
-  app.use("/api/users", userRouter);
+  app.use("/api/company", companyRouter);
   app.get("*", (req, res) => {
     res.sendStatus(404);
   });

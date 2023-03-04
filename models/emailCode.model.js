@@ -7,7 +7,7 @@ export const emailCodeSchema = new mongoose.Schema({
 		required: true,
 		length: 4,
 	},
-	userId: mongoose.Schema.Types.ObjectId,
+	companyId: mongoose.Schema.Types.ObjectId,
 });
 
 export const EmailCode = mongoose.model("EmailCode", emailCodeSchema);
