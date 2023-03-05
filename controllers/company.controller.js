@@ -57,7 +57,6 @@ export const authenticateCompany = async (req, res) => {
 };
 
 export const logoutCompany = async (req, res) => {
-	const { companyId } = req.body;
 	let token = req.cookies["api-auth"];
 	if (token) {
 		// await Token.deleteMany({ companyId });
@@ -178,6 +177,8 @@ export const verifyCompanyEmail = async (req, res) => {
 		.status(StatusCodes.OK)
 		.json({ status: "success", message: "Email verified successfully!" });
 };
+
+
 
 const isCompanyVerifiedFunc = (req, res, company) => {
 	if (!company.accountVerified || !company.emailVerified) {
