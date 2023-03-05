@@ -2,11 +2,8 @@ import Joi from "joi";
 import mongoose from "mongoose";
 
 export const tokenSchema = new mongoose.Schema({
-	token: {
-		type: String,
-		required: true,
-	},
-	companyId: mongoose.Schema.Types.ObjectId,
+	jti: String,
+	createdAt: { type: Date, default: Date.now },
 });
 
 export const Token = mongoose.model("Token", tokenSchema);

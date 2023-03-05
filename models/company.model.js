@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Joi from "joi";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 
 export const companySchema = mongoose.Schema(
 	{
@@ -61,8 +62,10 @@ companySchema.methods.isValidPassword = async (
 };
 
 companySchema.methods.generateAuthToken = function () {
+	const jti = uuidv4();
 	const token = jwt.sign(
 		{
+			jti,
 			companyId: this._id,
 			companyName: this.companyName,
 			email: this.email,

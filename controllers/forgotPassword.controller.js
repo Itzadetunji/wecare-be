@@ -1,9 +1,11 @@
-import jwt from "jsonwebtoken";
-import Joi from "joi";
 import bcrypt from "bcrypt";
+import Joi from "joi";
+import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 import Company from "../models/company.model.js";
 import { StatusCodes } from "http-status-codes";
 import { sendMail } from "../utils/nodemailertransport.js";
+import Token from "../models/token.model.js";
 
 export const forgotPassword = async (req, res) => {
 	console.log(req.body);
@@ -23,18 +25,31 @@ export const forgotPassword = async (req, res) => {
 		});
 
 	// Create a unique secret key for each user
-	const secret = process.env.JWT_PRIVATE_KEY + company.password;
-	const token = await jwt.sign(
+	const secret = process.env.JWT_SECRET_KEY;
+	const jti = uuidv4();
+	const token = jwt.sign(
 		{
+			jti: jti,
 			id: company._id,
-			email: company.email,
 		},
-		secret,
-		{ expiresIn: "15m" }
+		process.env.JWT_PRIVATE_KEY,
+		{
+			expiresIn: "15m",
+		}
 	);
 
+	const newToken = new Token({ jti: jti });
+	newToken.save((err, savedToken) => {
+		if (err) {
+			res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+				status: "fail",
+				message: "Something went wrong and could not add the jti",
+			});
+		}
+	});
+
 	// Generate the link
-	const link = `${process.env.HOST}/api/reset-password/${company._id}/${token}`;
+	const link = `${process.env.HOST}/api/forgot/reset/forgot/${token}`;
 	sendMail(
 		company.email,
 		"OTP To Reset to your Wecare Company Account Password",
@@ -87,18 +102,25 @@ export const forgotPassword = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-	const { newPassword, confirmNewPassword } = req.body;
+	const { newPassword, confirmPassword } = req.body;
+	if (!newPassword || !confirmPassword) {
+		return res
+			.status(StatusCodes.PARTIAL_CONTENT)
+			.json({ status: "fail", message: "New password required" });
+	}
+
 	const { error } = validatePassword(newPassword);
 	if (error)
 		return res
 			.status(StatusCodes.BAD_REQUEST)
-			.send(error.details[0].message);
-	if (!(newPassword === confirmNewPassword)) {
+			.json({ status: "fail", message: error.details[0].message });
+	if (!(newPassword === confirmPassword)) {
 		return res.status(StatusCodes.PARTIAL_CONTENT).json({
 			status: "fail",
 			message: "The passwords supplied do not match",
 		});
 	}
+
 	let company = await Company.findById(req.company.id);
 	if (company) {
 		const salt = await bcrypt.genSalt(10);
@@ -108,7 +130,8 @@ export const resetPassword = async (req, res) => {
 			if (err) {
 				res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
 					status: "fail",
-					message: "Error updating the password",
+					message:
+						"Something went wrong and could not update the password",
 				});
 			} else {
 				res.status(StatusCodes.OK).json({
@@ -118,10 +141,83 @@ export const resetPassword = async (req, res) => {
 			}
 		});
 	} else {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
 			status: "fail",
 			message: "Something went wrong and could not update the password",
 		});
+	}
+};
+
+export const resetForgotPassword = async (req, res) => {
+	const { token } = req.params;
+	if (!token) {
+		return res
+			.status(StatusCodes.PARTIAL_CONTENT)
+			.json({ status: "fail", message: "Token required" });
+	}
+
+	const payload = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
+	const { newPassword, confirmNewPassword } = req.body;
+	if (!newPassword || !confirmNewPassword) {
+		return res
+			.status(StatusCodes.PARTIAL_CONTENT)
+			.json({ status: "fail", message: "New password required" });
+	}
+
+	try {
+		const storedToken = await Token.findOne({ jti: payload.jti });
+		if (!storedToken) {
+			return res.status(StatusCodes.FORBIDDEN).json({
+				status: "fail",
+				message: "Invalid token",
+			});
+		}
+	} catch (err) {
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			status: "fail",
+			message: "Something went wrong",
+		});
+	}
+
+	await Token.findOneAndDelete({ jti: payload.jti });
+
+	const { error } = validatePassword(newPassword);
+	if (error)
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ status: "fail", message: error.details[0].message });
+
+	if (!(newPassword === confirmNewPassword)) {
+		return res.status(StatusCodes.PARTIAL_CONTENT).json({
+			status: "fail",
+			message: "The passwords supplied do not match",
+		});
+	}
+
+	const salt = await bcrypt.genSalt(10);
+	const password = await bcrypt.hash(newPassword, salt);
+
+	try {
+		const updatedCompany = await Company.findByIdAndUpdate(
+			payload.id,
+			{ password },
+			{
+				new: true,
+			}
+		);
+		if (!updatedCompany) {
+			return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+				status: "fail",
+				message:
+					"Something went wrong and could not update the password",
+			});
+		}
+		res.status(StatusCodes.OK).json({
+			staus: "success",
+			message: "Successfully updated the password",
+		});
+	} catch (err) {
+		console.error(err);
 	}
 };
 

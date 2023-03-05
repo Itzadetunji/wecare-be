@@ -1,17 +1,21 @@
+import passportLocal from "passport-local";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { StatusCodes } from "http-status-codes";
+import { isValidObjectId } from "mongoose";
+import dayjs from "dayjs";
 import passport from "passport";
+import { v4 as uuidv4 } from "uuid";
 import Company, {
 	validateCompany,
 	validateCreateCompany,
 } from "../models/company.model.js";
 import EmailCode, { validateEmailCode } from "../models/emailCode.model.js";
 import Token from "../models/token.model.js";
-import passportLocal from "passport-local";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { StatusCodes } from "http-status-codes";
 import { sendMail } from "../utils/nodemailertransport.js";
-import { isValidObjectId } from "mongoose";
-import dayjs from "dayjs";
+
+
+const jti = uuidv4();
 
 export const authenticateCompany = async (req, res) => {
 	const { error } = validateCompany(req.body);
@@ -40,11 +44,6 @@ export const authenticateCompany = async (req, res) => {
 		});
 
 	const token = "Bearer " + company.generateAuthToken();
-	const storeToken = new Token({
-		token: token.split(" ")[1],
-		companyId: company._id,
-	});
-	await storeToken.save();
 
 	if (!isCompanyVerifiedFunc(req, res, company)) {
 		res.cookie("api-auth", token, {
@@ -59,8 +58,12 @@ export const authenticateCompany = async (req, res) => {
 export const logoutCompany = async (req, res) => {
 	let token = req.cookies["api-auth"];
 	if (token) {
-		// await Token.deleteMany({ companyId });
 		token = token.split(" ")[1];
+		const storeToken = new Token({
+			jti,
+		});
+		await storeToken.save();
+
 		res.cookie("api-auth", token, { maxAge: 0 });
 	}
 	return res
@@ -177,8 +180,6 @@ export const verifyCompanyEmail = async (req, res) => {
 		.status(StatusCodes.OK)
 		.json({ status: "success", message: "Email verified successfully!" });
 };
-
-
 
 const isCompanyVerifiedFunc = (req, res, company) => {
 	if (!company.accountVerified || !company.emailVerified) {
