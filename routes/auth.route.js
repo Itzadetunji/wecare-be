@@ -8,6 +8,6 @@ import {
 const authRouter = express.Router();
 
 authRouter.post("/", authenticateCompany);
-authRouter.post("/logout", logoutCompany);
+authRouter.get("/logout", logoutCompany);
 
 export default authRouter;
