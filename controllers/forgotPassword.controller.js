@@ -49,7 +49,7 @@ export const forgotPassword = async (req, res) => {
 	});
 
 	// Generate the link
-	const link = `${process.env.HOST}/api/forgot/reset/forgot/${token}`;
+	const link = `${process.env.FRONTEND_BASE_URL}/forgot/${token}`;
 	sendMail(
 		company.email,
 		"OTP To Reset to your Wecare Company Account Password",
@@ -68,37 +68,6 @@ export const forgotPassword = async (req, res) => {
 			});
 		}
 	);
-	// Send the mail
-	// const from = "WEcare";
-	// const to = company.email;
-	// const subject = "RESET YOUR PASSWORD";
-	// const message = `Click on this <a href="${link}">link</a> to reset your password`;
-
-	// const transporter = nodemailer.createTransport({
-	// 	service: "gmail",
-	// 	auth: {
-	// 		user: process.env.EMAIL,
-	// 		pass: process.env.EMAIL_APP_PASSWORD,
-	// 	},
-	// });
-	// const mailOptions = {
-	// 	from,
-	// 	to,
-	// 	subject,
-	// 	text: message,
-	// };
-	// transporter.sendMail(mailOptions, (err, info) => {
-	// 	if (err) {
-	// 		console.error(err);
-	// 		return res
-	// 			.status(StatusCodes.INTERNAL_SERVER_ERROR)
-	// 			.json({ message: "Something went wrong on the server" });
-	// 	} else {
-	// 		return res
-	// 			.status(StatusCodes.OK)
-	// 			.send("Email Sent " + info.response);
-	// 	}
-	// });
 };
 
 export const resetPassword = async (req, res) => {
