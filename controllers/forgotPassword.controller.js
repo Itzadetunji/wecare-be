@@ -125,13 +125,23 @@ export const resetForgotPassword = async (req, res) => {
 			.json({ status: "fail", message: "Token required" });
 	}
 
+	const decodedToken = jwt.decode(token, { complete: true });
+	const expirationTime = decodedToken.payload.exp;
+	const currentTime = Date.now() / 1000;
+
+	if (currentTime > expirationTime) {
+		return res
+			.status(StatusCodes.FORBIDDEN)
+			.json({ status: "fail", message: "Token has expired" });
+	}
+
 	const payload = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
 	if (!newPassword || !confirmNewPassword) {
 		return res
 			.status(StatusCodes.PARTIAL_CONTENT)
 			.json({ status: "fail", message: "New password required" });
 	}
-	console.log(payload.jti);
+
 	try {
 		const storedToken = await Token.findOne({ jti: payload.jti });
 		if (!storedToken) {
