@@ -48,13 +48,8 @@ export const forgotPassword = async (req, res) => {
 			});
 		}
 	});
-	return res.status(StatusCodes.CREATED).json({
-		status: "success",
-		message: "Email has been sent",
-		token,
-	});
 	// Generate the link
-	const link = `${process.env.FRONTEND_BASE_URL}/forgot/?token=${token}`;
+	const link = `${process.env.FRONTEND_BASE_URL}/reset?token=${token}`;
 	sendMail(
 		company.email,
 		"OTP To Reset to your Wecare Company Account Password",
