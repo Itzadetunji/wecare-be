@@ -18,7 +18,7 @@ export default (app) => {
 	app.use(bodyParser.urlencoded({ extended: true }));
 	app.use(bodyParser.json());
 	app.use(logger("dev"));
-	app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+	app.use(cors({ origin: "http://localhost:3010", credentials: true }));
 	app.use(xss());
 	app.use(cookieParser());
 	app.use(helmet());

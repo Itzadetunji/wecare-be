@@ -39,6 +39,7 @@ export const forgotPassword = async (req, res) => {
 	);
 
 	const newToken = new Token({ jti: jti });
+	console.log(token);
 	newToken.save((err, savedToken) => {
 		if (err) {
 			res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -47,9 +48,13 @@ export const forgotPassword = async (req, res) => {
 			});
 		}
 	});
-
+	return res.status(StatusCodes.CREATED).json({
+		status: "success",
+		message: "Email has been sent",
+		token,
+	});
 	// Generate the link
-	const link = `${process.env.FRONTEND_BASE_URL}/forgot/${token}`;
+	const link = `${process.env.FRONTEND_BASE_URL}/forgot/?token=${token}`;
 	sendMail(
 		company.email,
 		"OTP To Reset to your Wecare Company Account Password",
@@ -118,7 +123,7 @@ export const resetPassword = async (req, res) => {
 };
 
 export const resetForgotPassword = async (req, res) => {
-	const { token } = req.params;
+	const { newPassword, confirmNewPassword, token } = req.body;
 	if (!token) {
 		return res
 			.status(StatusCodes.PARTIAL_CONTENT)
@@ -126,13 +131,12 @@ export const resetForgotPassword = async (req, res) => {
 	}
 
 	const payload = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
-	const { newPassword, confirmNewPassword } = req.body;
 	if (!newPassword || !confirmNewPassword) {
 		return res
 			.status(StatusCodes.PARTIAL_CONTENT)
 			.json({ status: "fail", message: "New password required" });
 	}
-
+	console.log(payload.jti);
 	try {
 		const storedToken = await Token.findOne({ jti: payload.jti });
 		if (!storedToken) {
@@ -148,13 +152,13 @@ export const resetForgotPassword = async (req, res) => {
 		});
 	}
 
-	await Token.findOneAndDelete({ jti: payload.jti });
-
 	const { error } = validatePassword(newPassword);
 	if (error)
 		return res
 			.status(StatusCodes.BAD_REQUEST)
 			.json({ status: "fail", message: error.details[0].message });
+
+	await Token.findOneAndDelete({ jti: payload.jti });
 
 	if (!(newPassword === confirmNewPassword)) {
 		return res.status(StatusCodes.PARTIAL_CONTENT).json({
@@ -204,7 +208,7 @@ const validateEmail = (company) => {
 
 const validatePassword = (password) => {
 	const schema = Joi.object({
-		password: Joi.string().required().min(8).max(50),
+		password: Joi.string().required().min(7).max(50),
 	});
 	return schema.validate({ password });
 };
